@@ -1,0 +1,27 @@
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const nodes=new Map();const node=()=>({innerHTML:'',textContent:'',style:{},addEventListener(){},querySelectorAll(){return[]},scrollHeight:0});let stored;
+const context=vm.createContext({document:{querySelector(s){if(!nodes.has(s))nodes.set(s,node());return nodes.get(s)},querySelectorAll(){return[]}},localStorage:{getItem:()=>stored,setItem:(k,v)=>stored=v},crypto:require('node:crypto').webcrypto,setTimeout(){},console,URL,Blob});
+vm.runInContext(fs.readFileSync('dist/app.js','utf8'),context);
+vm.runInContext(`
+const project=pnow();
+if(!validState(state))throw Error('Invalid initial state');
+if(!clientReply(project,'Who is the audience?').includes('local diners'))throw Error('Audience missing');
+project.phase=1;clientReply(project,'Confirm the proposed scope');
+if(!project.scopeAccepted||!project.decisions.length)throw Error('Scope not recorded');
+project.phase=2;if(!clientReply(project,'review my work').includes('save an artifact'))throw Error('Review gate failed');
+project.artifacts.push({title:'Booking v1',url:'https://example.com',desc:'Mobile booking flow'});
+if(!clientReply(project,'review my work').includes('Booking v1'))throw Error('Review context lost');
+project.phase=3;clientReply(project,'review changes');
+project.artifacts.push({title:'Booking v2',url:'',desc:'Revised labels and error state'});
+if(!clientReply(project,'I changed the error state. Please approve.').includes('simulated sign-off'))throw Error('Sign-off failed');
+const before=project.decisions.length;
+if(!mentorReply('Accessibility','A booking screen',project).includes('keyboard'))throw Error('Mentor focus missing');
+if(project.decisions.length!==before)throw Error('Mentor modified client state');
+if(!caseText(project).includes('No measured outcomes recorded'))throw Error('Invented outcomes');
+project.evidence.push({result:'4/5 completed',method:'Moderated test, 5 people',date:'2026-11-13',source:'Research notes'});
+if(!caseText(project).includes('Self-reported observation: 4/5 completed'))throw Error('Evidence missing');
+if(safeURL('javascript:alert(1)'))throw Error('Unsafe URL allowed');
+save();
+`,context);
+assert.equal(JSON.parse(stored).projects[0].artifacts.length,2);
+console.log('PASS: generation, discovery, scoping, review gate, revisions/sign-off, mentor separation, honest export, evidence, URL safety, persistence.');

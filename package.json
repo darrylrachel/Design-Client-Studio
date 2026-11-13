@@ -1,0 +1,12 @@
+{
+  "name": "design-client-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scenario-based freelance design practice simulator",
+  "scripts": {
+    "test": "node --check dist/app.js && node tests/workflow.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
